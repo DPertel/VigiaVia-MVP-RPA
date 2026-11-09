@@ -24,7 +24,7 @@ O projeto aborda o problema da identificação e organização de ocorrências v
 
 A solução desenvolvida neste repositório é um **Robotic Process Automation (RPA)** que automatiza o recebimento, a validação, a classificação e o encaminhamento de relatos de ocorrências viárias.
 
-Este pacote é independente e executável localmente. Utiliza arquivos CSV e JSON e um banco SQLite demonstrativo. Não depende de deploy, Docker, Azure ou API do MVP.
+Este pacote é independente e executável localmente. Utiliza arquivos CSV e JSON e um banco SQLite demonstrativo. 
 
 ## 2. 🎯 Objetivo
 
