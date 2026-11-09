@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.DS_Store
+logs/*.log
+data/output/*
+data/mvp_inbox/*
+!data/output/.gitkeep
+!data/mvp_inbox/.gitkeep

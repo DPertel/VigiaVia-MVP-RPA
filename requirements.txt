@@ -1,0 +1,2 @@
+# Execução principal utiliza apenas a biblioteca padrão do Python.
+# Para testes: nenhuma dependência externa.

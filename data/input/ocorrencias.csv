@@ -1,0 +1,8 @@
+id,data,latitude,longitude,gravidade,descricao
+VV-001,2026-11-09,-23.561100,-46.655200,alta,Buraco profundo em faixa de rolamento
+VV-002,2026-11-09,-23.561150,-46.655200,media,Possivel repeticao proxima ao primeiro registro
+VV-003,2026-11-08,-23.562800,-46.657100,baixa,Desgaste superficial do pavimento
+VV-004,2026-11-09,-23.564000,-46.659000,media,Afundamento localizado na pista
+VV-005,2026-11-09,999,-46.650000,alta,Registro com latitude invalida para testar validacao
+VV-006,2026-11-09,-23.565000,-46.661000,urgente,Gravidade fora da lista permitida
+VV-007,2026-11-07,-23.566200,-46.662100,alta,Trinca extensa com risco para motociclistas
