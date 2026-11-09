@@ -1,178 +1,108 @@
 
-"""Componente local demonstrativo que consome o JSON exportado pelo RPA.
-
-Representa um segundo componente CitizenTech por meio de uma base SQLite local.
-Não se conecta à API de produção do VigiaVia.
-"""
-
-import argparse
 import json
 import sqlite3
 from pathlib import Path
 
-from .config import ROOT
+from .config import DB_PATH
 
 
-DB_PATH = ROOT / "data" / "mvp_consumer.sqlite3"
+def consume_file(
+    json_path: Path,
+    db_path: Path = DB_PATH,
+) -> dict:
+    """Consome um JSON de ocorrências e evita inserções duplicadas."""
 
+    json_path = Path(json_path)
+    db_path = Path(db_path)
 
-def consume_file(json_path: Path, db_path: Path = DB_PATH) -> dict:
-    """Consome o JSON gerado pelo RPA e registra as ocorrências no SQLite."""
-
-    # Verifica se o arquivo JSON existe.
     if not json_path.exists():
         raise FileNotFoundError(
-            f"Arquivo JSON não encontrado: {json_path}"
+            f"JSON de integração não encontrado: {json_path}"
         )
 
-    # Carrega e valida a estrutura principal do JSON.
-    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    with json_path.open("r", encoding="utf-8-sig") as file:
+        payload = json.load(file)
 
-    if not isinstance(payload, dict) or not isinstance(payload.get("items"), list):
-        raise ValueError(
-            "Contrato inválido: esperado objeto JSON com lista 'items'"
-        )
+    items = payload.get("items")
 
-    # Garante que a pasta do banco de dados exista.
+    if not isinstance(items, list):
+        raise ValueError("JSON sem lista válida de items")
+
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    inserted = 0
-    duplicates = 0
-
-    # Abre a conexão com o banco de dados.
-    conn = sqlite3.connect(db_path)
+    connection = sqlite3.connect(db_path)
 
     try:
-        # Garante a execução da transação.
-        with conn:
+        cursor = connection.cursor()
 
-            # Cria a tabela caso ela ainda não exista.
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS occurrences (
-                    occurrence_id TEXT PRIMARY KEY,
-                    execution_id TEXT NOT NULL,
-                    occurred_at TEXT NOT NULL,
-                    latitude REAL NOT NULL,
-                    longitude REAL NOT NULL,
-                    severity TEXT NOT NULL,
-                    priority TEXT NOT NULL,
-                    description TEXT NOT NULL,
-                    source TEXT NOT NULL
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS occurrences (
+                occurrence_id TEXT PRIMARY KEY,
+                execution_id TEXT,
+                occurred_at TEXT,
+                latitude REAL,
+                longitude REAL,
+                severity TEXT,
+                priority TEXT,
+                description TEXT,
+                source TEXT
+            )
+        """)
+
+        inserted = 0
+        already_registered = 0
+
+        for item in items:
+            cursor.execute("""
+                INSERT OR IGNORE INTO occurrences (
+                    occurrence_id,
+                    execution_id,
+                    occurred_at,
+                    latitude,
+                    longitude,
+                    severity,
+                    priority,
+                    description,
+                    source
                 )
-            """)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                item["occurrence_id"],
+                item["execution_id"],
+                item["occurred_at"],
+                item["latitude"],
+                item["longitude"],
+                item["severity"],
+                item["priority"],
+                item["description"],
+                item["source"],
+            ))
 
-            # Percorre todas as ocorrências recebidas no JSON.
-            for item in payload["items"]:
+            if cursor.rowcount == 1:
+                inserted += 1
+            else:
+                already_registered += 1
 
-                required = (
-                    "occurrence_id",
-                    "execution_id",
-                    "occurred_at",
-                    "latitude",
-                    "longitude",
-                    "severity",
-                    "priority",
-                    "description",
-                    "source"
-                )
+        connection.commit()
 
-                # Valida os campos obrigatórios.
-                if not isinstance(item, dict) or any(
-                    key not in item for key in required
-                ):
-                    raise ValueError(
-                        "Item do JSON não atende ao contrato de integração"
-                    )
+        cursor.execute("SELECT COUNT(*) FROM occurrences")
+        database_total = cursor.fetchone()[0]
 
-                # Insere a ocorrência somente se ela ainda não existir.
-                cur = conn.execute("""
-                    INSERT OR IGNORE INTO occurrences (
-                        occurrence_id,
-                        execution_id,
-                        occurred_at,
-                        latitude,
-                        longitude,
-                        severity,
-                        priority,
-                        description,
-                        source
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    item["occurrence_id"],
-                    item["execution_id"],
-                    item["occurred_at"],
-                    float(item["latitude"]),
-                    float(item["longitude"]),
-                    item["severity"],
-                    item["priority"],
-                    item["description"],
-                    item["source"]
-                ))
-
-                # Identifica se o registro foi inserido ou já existia.
-                if cur.rowcount:
-                    inserted += 1
-                else:
-                    duplicates += 1
-
-            # Consulta a quantidade total de registros armazenados.
-            total = conn.execute(
-                "SELECT COUNT(*) FROM occurrences"
-            ).fetchone()[0]
+        return {
+            "inserted": inserted,
+            "already_registered": already_registered,
+            "database_total": database_total,
+            "database": str(db_path),
+        }
 
     finally:
-        # Fecha a conexão somente após concluir todas as operações.
-        conn.close()
-
-    # Retorna o resumo do processamento.
-    return {
-        "inserted": inserted,
-        "already_registered": duplicates,
-        "database_total": total,
-        "database": str(db_path)
-    }
+        connection.close()
 
 
-def main() -> int:
-    """Executa o consumidor pela linha de comando."""
+def consume_json(
+    json_path: Path,
+    db_path: Path = DB_PATH,
+) -> dict:
+    """Mantém compatibilidade com o monitoramento autônomo."""
 
-    parser = argparse.ArgumentParser(
-        description="Consumidor local demonstrativo do VigiaVia MVP"
-    )
-
-    parser.add_argument(
-        "json_file",
-        type=Path,
-        help="JSON gerado pelo RPA"
-    )
-
-    args = parser.parse_args()
-
-    try:
-        result = consume_file(args.json_file)
-
-    except (
-        FileNotFoundError,
-        ValueError,
-        OSError,
-        json.JSONDecodeError,
-        sqlite3.Error
-    ) as exc:
-        print(f"Falha no consumo: {exc}")
-        return 1
-
-    print("=== COMPONENTE CONSUMIDOR CITIZENTECH ===")
-    print(f"Novos registros: {result['inserted']}")
-    print(
-        f"Já existentes (idempotência): "
-        f"{result['already_registered']}"
-    )
-    print(f"Total no banco local: {result['database_total']}")
-    print(f"Banco SQLite: {result['database']}")
-
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return consume_file(json_path, db_path)

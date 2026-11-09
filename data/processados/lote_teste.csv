@@ -1,0 +1,7 @@
+﻿id,data,latitude,longitude,gravidade,descricao
+BUR-101,2026-11-09,-23.550520,-46.633308,alta,Buraco profundo próximo à faixa de pedestres
+BUR-102,2026-11-09,-23.550530,-46.633310,media,Buraco próximo ao primeiro registro
+BUR-103,2026-11-09,-23.561000,-46.655000,baixa,Pequena irregularidade no asfalto
+BUR-104,2026-11-09,-23.570000,-46.640000,media,Cratera com risco para motociclistas
+BUR-105,2026-11-09,200,-46.640000,alta,Coordenada inválida
+BUR-106,2026-11-09,-23.580000,-46.650000,urgente,Buraco com gravidade não reconhecida

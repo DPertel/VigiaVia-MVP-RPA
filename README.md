@@ -1,156 +1,427 @@
-# VigiaVia RPA — Automação Inteligente de Ocorrências Viárias
+# 🚧 VigiaVia RPA — Automação Inteligente de Ocorrências Viárias
 
-**FIAP Global Solution 2026.2 · CitizenTech · Robotic Process Automation**  
+**FIAP Global Solution 2026.2 · CitizenTech · Robotic Process Automation**
+
 **Atividade:** Do Processo Manual à Automação Inteligente
 
-## Integrantes
+---
+
+## 👥 Integrantes
+
 | Integrante | RM |
 |---|---:|
 | Deivison Pertel | 550803 |
 | Eduardo Akira Murata | 98713 |
 | Wesley Souza de Oliveira | 97874 |
 
-## 1. Contexto e problema
+---
 
-O VigiaVia é uma proposta CitizenTech de zeladoria inteligente de vias públicas. O problema abordado é a identificação de buracos e danos no pavimento, que pode depender de chamados manuais, lentos, imprecisos e duplicados. A automação deste repositório representa a etapa operacional que organiza os relatos antes de sua disponibilização a um componente de gestão.
+## 1. 📌 Contexto e problema
 
-Este projeto RPA é **independente para execução local**. Ele utiliza arquivos CSV/JSON de demonstração e não depende do deploy, Docker, Azure ou API do MVP. A saída estruturada em `data/mvp_inbox/` representa a integração por arquivo com outro componente CitizenTech, conforme a alternativa de arquivos estruturados prevista no desafio. A conexão técnica com a API real do MVP não está implementada neste pacote.
+O VigiaVia é uma proposta CitizenTech voltada à zeladoria inteligente de vias públicas.
 
-## 2. Objetivo
+O projeto aborda o problema da identificação e organização de ocorrências viárias, como buracos e danos no pavimento. Processos manuais podem gerar demora no tratamento dos relatos, inconsistências nos dados e registros duplicados.
 
-Automatizar o recebimento em lote de ocorrências viárias, validar campos, detectar possíveis duplicidades geográficas, classificar prioridades, produzir arquivos consumíveis por outro componente e registrar auditoria sem armazenar dados pessoais.
+A solução desenvolvida neste repositório é um **Robotic Process Automation (RPA)** que automatiza o recebimento, a validação, a classificação e o encaminhamento de relatos de ocorrências viárias.
 
-## 3. Fluxo resumido
+Este pacote é independente e executável localmente. Utiliza arquivos CSV e JSON e um banco SQLite demonstrativo. Não depende de deploy, Docker, Azure ou API do MVP.
 
-1. Ler `data/input/ocorrencias.csv`.
-2. Validar identificador, data, latitude, longitude, gravidade e descrição.
-3. Comparar coordenadas com ocorrências válidas anteriores do mesmo lote.
-4. Aplicar regra de prioridade.
-5. Exportar ocorrências válidas e não duplicadas para `data/mvp_inbox/ocorrencias_<execucao>.json`.
-6. Executar o componente consumidor local (`src/mvp_consumer.py`) para ingerir o JSON em SQLite, simulando o recebimento por outro componente CitizenTech.
-7. Exportar relatório completo para `data/output/resultado_<execucao>.csv`.
-7. Registrar totais e erros em `logs/`.
+## 2. 🎯 Objetivo
 
-## 4. Requisitos
+Automatizar o processamento de ocorrências viárias, reduzindo tarefas manuais e melhorando a organização dos registros.
 
-- Python 3.10 ou superior.
-- Não requer serviços externos nem bibliotecas de terceiros para a execução principal.
+O sistema permite:
 
-## 5. Como executar no Windows (PowerShell)
+- Receber arquivos CSV automaticamente.
+- Validar os dados de cada ocorrência.
+- Identificar possíveis duplicidades geográficas.
+- Classificar prioridades conforme a gravidade informada.
+- Gerar relatórios CSV e arquivos JSON.
+- Integrar os registros válidos a um banco SQLite local.
+- Evitar a reinserção de registros já cadastrados.
+- Registrar eventos e resultados para auditoria.
+- Acompanhar o processamento por uma interface gráfica.
 
-```powershell
-cd vigiavia-rpa
-py -3 --version
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m src.main
+## 3. ⚙️ Arquitetura e fluxo de funcionamento
+
+O RPA utiliza uma arquitetura modular em Python.
+
+### Fluxo operacional
+
+1. O monitoramento observa a pasta `data/input/pendentes`.
+2. Quando um arquivo CSV é identificado, o sistema aguarda sua estabilização.
+3. O arquivo é recebido e encaminhado para processamento.
+4. Cada ocorrência passa pela validação dos campos obrigatórios.
+5. As coordenadas são comparadas com ocorrências válidas para identificar possíveis duplicidades.
+6. Os registros válidos recebem uma classificação de prioridade.
+7. O sistema gera um relatório CSV e um arquivo JSON.
+8. O componente consumidor local recebe o JSON e registra os dados no SQLite.
+9. O arquivo original é movido para a pasta de processados.
+10. Os eventos e resultados são registrados nos logs.
+
+### Diagrama simplificado
+
+```text
+       Arquivo CSV
+            |
+            v
+   Pasta de entrada
+       pendentes
+            |
+            v
+   Monitoramento RPA
+            |
+            v
+     Validação dos dados
+            |
+            v
+   Detecção de duplicidades
+            |
+            v
+  Classificação de prioridade
+            |
+            v
+     Geração de arquivos
+       /           \
+      v             v
+ Relatório CSV    Integração JSON
+                       |
+                       v
+                 Consumidor local
+                       |
+                       v
+                   SQLite
+                       |
+                       v
+               Arquivamento CSV
 ```
 
-Se a política do PowerShell bloquear a ativação, execute sem ativar o ambiente:
+## 4. 🧰 Tecnologias utilizadas
 
-```powershell
-py -3 -m src.main
+| Tecnologia | Aplicação |
+|---|---|
+| Python 3.10+ | Linguagem principal |
+| Tkinter | Interface gráfica |
+| SQLite | Armazenamento local demonstrativo |
+| CSV | Recebimento e relatórios |
+| JSON | Estrutura de integração |
+| Logging | Registro de eventos |
+| Unittest | Testes automatizados |
+| PowerShell | Execução no Windows |
+
+O projeto utiliza recursos da biblioteca padrão do Python, sem dependências externas para sua execução principal.
+
+## 5. 📂 Estrutura do projeto
+
+```text
+vigiavia-mvp-rpa/
+│
+├── assets/
+│
+├── data/
+│   ├── input/
+│   │   └── pendentes/
+│   ├── output/
+│   ├── mvp_inbox/
+│   ├── processados/
+│   └── erros/
+│
+├── docs/
+│
+├── logs/
+│
+├── src/
+│   ├── config.py
+│   ├── deduplication.py
+│   ├── gui.py
+│   ├── logger_config.py
+│   ├── main.py
+│   ├── mvp_consumer.py
+│   ├── priority.py
+│   ├── processor.py
+│   ├── validator.py
+│   └── __init__.py
+│
+├── tests/
+│   ├── test_deduplication.py
+│   ├── test_mvp_consumer.py
+│   ├── test_priority.py
+│   ├── test_processor.py
+│   └── test_validator.py
+│
+├── .gitignore
+├── README.md
+└── requirements.txt
 ```
 
-O arquivo de entrada de demonstração já está em `data/input/ocorrencias.csv`. Para executar novamente, o robô cria uma nova identificação de execução e novos arquivos de saída.
+**Responsabilidade dos principais módulos:**
 
-### Consumir o JSON pelo componente CitizenTech local
+- `main.py`: inicialização, monitoramento contínuo e controle do fluxo.
+- `gui.py`: interface gráfica e acompanhamento das atividades.
+- `processor.py`: processamento dos lotes e geração de arquivos.
+- `validator.py`: validação dos dados recebidos.
+- `deduplication.py`: identificação de possíveis duplicidades geográficas.
+- `priority.py`: classificação de prioridade.
+- `mvp_consumer.py`: consumo do JSON e persistência no SQLite.
+- `config.py`: caminhos e parâmetros de configuração.
+- `logger_config.py`: configuração dos registros de execução.
 
-Após a execução do RPA, copie o caminho do JSON exibido no terminal e execute:
+## 6. 📋 Formato dos arquivos de entrada
 
-```powershell
-py -3 -m src.mvp_consumer data/mvp_inbox/ocorrencias_<execucao>.json
+O sistema recebe arquivos CSV com o seguinte cabeçalho obrigatório:
+
+```csv
+id,data,latitude,longitude,gravidade,descricao
 ```
 
-O consumidor grava os registros em `data/mvp_consumer.sqlite3` e usa `occurrence_id` como chave única para evitar reingestão. Esse consumidor é uma simulação local de outro componente CitizenTech; não é a API real nem o banco de produção do VigiaVia.
+Exemplo:
 
-### Executar com outro arquivo
-
-```powershell
-py -3 -m src.main --input data/input/meu_lote.csv
+```csv
+id,data,latitude,longitude,gravidade,descricao
+BUR-101,2026-11-09,-23.550520,-46.633308,alta,Buraco profundo próximo à faixa de pedestres
+BUR-102,2026-11-09,-23.550530,-46.633310,media,Buraco próximo ao primeiro registro
+BUR-103,2026-11-09,-23.561000,-46.655000,baixa,Pequena irregularidade no asfalto
 ```
 
-### Executar testes
+### Regras de validação
 
-```powershell
-py -3 -m unittest discover -s tests -v
-```
+- Identificador obrigatório.
+- Data válida.
+- Latitude e longitude dentro dos intervalos geográficos permitidos.
+- Gravidade reconhecida.
+- Descrição obrigatória.
 
-## 6. Regras de negócio
+Valores de gravidade aceitos:
+
+- `alta`
+- `media`
+- `baixa`
+
+## 7. 🧠 Regras de negócio
 
 | Regra | Condição | Resultado |
 |---|---|---|
-| R01 | Campo obrigatório ausente ou inválido | `INVALIDO`; não segue para integração |
-| R02 | Gravidade `alta` | Prioridade `ALTA` |
-| R03 | Gravidade `media` | Prioridade `MEDIA` |
-| R04 | Gravidade `baixa` | Prioridade `BAIXA` |
-| R05 | Distância até 20 metros de ocorrência válida anterior | `POSSIVEL_DUPLICIDADE`; não envia novamente ao arquivo de integração |
-| R06 | Registro válido, não duplicado | `PROCESSADO`; enviado ao arquivo estruturado |
-| R07 | Erro isolado em um registro | Registrar erro e continuar o lote |
+| R01 | Campo obrigatório inválido ou ausente | Registro rejeitado |
+| R02 | Gravidade alta | Prioridade ALTA |
+| R03 | Gravidade média | Prioridade MEDIA |
+| R04 | Gravidade baixa | Prioridade BAIXA |
+| R05 | Ocorrência próxima de outra válida | Possível duplicidade |
+| R06 | Registro válido e não duplicado | Encaminhado para integração |
+| R07 | Erro isolado em um registro | Registrado sem interromper o lote |
+| R08 | Registro já existente no SQLite | Não é inserido novamente |
 
-**Atenção:** o raio de 20 metros é um parâmetro demonstrativo configurável, não uma regra oficial confirmada do MVP. A detecção sinaliza possível duplicidade; não apaga registros nem substitui validação humana. A gravidade é informada na entrada e não é inferida por IA.
+### Detecção de duplicidades
 
-## 7. Entradas e saídas
+O sistema utiliza a fórmula de Haversine para calcular a distância geográfica entre ocorrências.
 
-### CSV de entrada
+O raio configurado para a demonstração é de 20 metros.
 
-Cabeçalho obrigatório:
+A identificação sinaliza uma **possível duplicidade**, não uma duplicidade comprovada. O resultado deve ser interpretado como indicação para análise humana.
 
-`id,data,latitude,longitude,gravidade,descricao`
+A gravidade é informada no arquivo de entrada e não é inferida por inteligência artificial.
 
-Valores de gravidade aceitos: `alta`, `media`, `baixa`. Coordenadas devem estar dentro dos limites geográficos válidos.
+## 8. 🖥️ Instalação e execução
 
-### Saídas
+### Requisitos
 
-- `data/output/resultado_<execucao>.csv`: todos os registros e seus resultados.
-- `data/mvp_inbox/ocorrencias_<execucao>.json`: somente registros válidos, não duplicados e classificados; contrato de integração por arquivo.
-- `data/mvp_consumer.sqlite3`: base local do componente consumidor demonstrativo, preenchida quando o comando de consumo é executado.
-- `logs/rpa_<execucao>.log`: eventos, contagens e falhas sem dados pessoais.
+- Windows 10 ou 11.
+- Python 3.10 ou superior.
+- PowerShell.
+- Git, caso deseje clonar o repositório.
 
-O identificador da execução e os nomes dos arquivos permitem rastrear cada lote.
+### Preparação do ambiente
 
-## 8. Exceções e resiliência
+Clone o repositório e acesse a pasta do projeto:
 
-- Arquivo inexistente: erro claro, log e encerramento com código diferente de zero.
-- CSV vazio ou sem colunas obrigatórias: erro de estrutura.
-- Linha inválida: classifica como inválida, registra o motivo e continua o lote.
-- Coordenada fora do intervalo: invalida o registro.
-- Duplicidade: sinaliza e evita uma segunda exportação no lote.
-- Falha de escrita: exceção é registrada; o processo termina com falha para evitar declarar integração concluída sem arquivo.
-- Reexecução: cada execução gera um novo arquivo; em produção, recomenda-se chave de idempotência persistente no componente consumidor.
-
-## 9. Segurança e LGPD
-
-O conjunto demonstrativo não contém nome, telefone, e-mail, placa ou imagem. O robô processa apenas identificador técnico, data, localização aproximada, gravidade e descrição operacional. Não inclua dados pessoais no CSV. Logs não reproduzem a descrição completa nem dados pessoais. O acesso aos arquivos e a política de retenção devem ser definidos pelo operador do MVP. Dados geográficos ainda podem ser sensíveis dependendo do contexto e devem ser tratados com acesso restrito.
-
-## 10. Estrutura
-
-```text
-vigiavia-rpa/
-├── src/                 # automação Python
-├── data/input/          # lote de entrada
-├── data/output/         # resultado completo CSV
-├── data/mvp_inbox/      # integração demonstrativa por JSON
-├── logs/                # auditoria
-├── tests/               # testes automatizados
-├── docs/                # PDD, BPMN, arquitetura e relatório
-├── assets/evidencias/   # inserir capturas reais da execução
-└── README.md
+```powershell
+git clone URL_DO_REPOSITORIO
+cd vigiavia-mvp-rpa
 ```
 
-## 11. Evidências acadêmicas
+Crie o ambiente virtual:
 
-Antes da entrega:
-1. Executar o robô e os testes no computador da equipe.
-2. Capturar terminal com execução concluída, arquivos gerados e testes aprovados.
-3. Inserir as imagens reais em `assets/evidencias/` e referenciá-las no PDF.
-4. Publicar este repositório no GitHub e substituir o link provisório no PDF.
-5. Gravar vídeo de até 3 minutos seguindo `docs/roteiro_video.md`.
+```powershell
+py -3 -m venv .venv
+```
 
-## 12. Limites da demonstração
+Ative o ambiente:
 
-Este pacote comprova processamento local e integração por arquivo estruturado. Não comprova chamada à API, gravação no banco ou ingestão real pelo MVP VigiaVia. Para afirmar integração real, o componente consumidor precisa ler o JSON exportado e a equipe deve registrar uma evidência dessa leitura. Não inventar prints ou resultados: as evidências devem ser capturadas durante a execução real.
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
-## Licença
+Se houver bloqueio de execução do PowerShell, utilize diretamente o executável do ambiente virtual nos comandos abaixo.
 
-Projeto acadêmico demonstrativo. Definir a licença antes da publicação pública.
+### Iniciar o RPA com interface gráfica
+
+```powershell
+.\.venv\Scripts\python.exe -m src.main
+```
+
+A interface gráfica será aberta e o monitoramento ficará ativo, aguardando novos arquivos CSV.
+
+### Executar somente pelo terminal
+
+```powershell
+.\.venv\Scripts\python.exe -m src.main --no-gui
+```
+
+### Executar uma vez com arquivo específico
+
+```powershell
+.\.venv\Scripts\python.exe -m src.main --once --input data/input/ocorrencias.csv
+```
+
+O modo `--once` executa o processamento pontual, sem iniciar a interface gráfica.
+
+### Encerrar o monitoramento
+
+Feche a interface gráfica ou utilize `Ctrl+C` no terminal de execução.
+
+## 9. 🔄 Como testar o recebimento de um novo relato
+
+Com a interface gráfica aberta, utilize um segundo terminal na pasta do projeto.
+
+Crie um arquivo de teste na pasta monitorada:
+
+```powershell
+@'
+id,data,latitude,longitude,gravidade,descricao
+BUR-107,2026-11-09,-23.600000,-46.700000,alta,Buraco profundo em via publica para teste
+'@ | .\.venv\Scripts\python.exe -c "import sys; from pathlib import Path; Path('data/input/pendentes/teste_registro_novo.csv').write_text(sys.stdin.read(), encoding='utf-8')"
+```
+
+O sistema deverá detectar automaticamente o arquivo e iniciar o processamento.
+
+Após a conclusão, o CSV original será arquivado em `data/processados/`.
+
+## 10. 📊 Arquivos de saída e integração
+
+O sistema gera:
+
+| Caminho | Finalidade |
+|---|---|
+| `data/output/` | Relatórios CSV |
+| `data/mvp_inbox/` | Arquivos JSON de integração |
+| Banco SQLite configurado no projeto | Persistência dos registros |
+| `data/processados/` | Arquivos CSV concluídos |
+| `data/erros/` | Arquivos que falharam no processamento |
+| `logs/` | Registros operacionais e auditoria |
+
+Os nomes dos arquivos de saída incluem um identificador de execução para facilitar o rastreamento de cada lote.
+
+### Integração SQLite
+
+O componente consumidor local utiliza o identificador da ocorrência como chave única para impedir a reinserção de registros já cadastrados.
+
+Essa característica implementa idempotência na persistência local.
+
+**Importante:** o SQLite utilizado é demonstrativo. A integração não representa uma conexão direta com o banco de produção ou com a API real do MVP VigiaVia.
+
+## 11. 🧪 Testes automatizados
+
+Para executar os testes:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+O projeto possui 12 testes automatizados distribuídos entre:
+
+| Módulo | Quantidade |
+|---|---:|
+| Deduplicação | 3 |
+| Consumidor SQLite | 1 |
+| Classificação de prioridade | 2 |
+| Processamento | 1 |
+| Validação | 5 |
+| **Total** | **12** |
+
+### Resultado da execução realizada
+
+```text
+Ran 12 tests in 0.072s
+
+OK
+```
+
+**Resultado: 12 de 12 testes aprovados.**
+
+## 12. ✅ Evidências de funcionamento
+
+Durante os testes funcionais realizados, foram observados os seguintes resultados.
+
+### Teste de processamento em lote
+
+Arquivo com seis ocorrências:
+
+| Resultado | Quantidade |
+|---|---:|
+| Processadas | 3 |
+| Inválidas | 2 |
+| Possíveis duplicidades | 1 |
+| Erros de execução | 0 |
+
+A ocorrência BUR-102 foi identificada como possível duplicidade de BUR-101, com distância calculada de 1,13 metro.
+
+As ocorrências BUR-105 e BUR-106 foram rejeitadas por problemas de validação.
+
+### Teste de novo cadastro
+
+Foi enviado um relato inédito, identificado como BUR-107.
+
+Resultado da integração:
+
+| Indicador | Resultado |
+|---|---:|
+| Novos registros inseridos | 1 |
+| Registros já cadastrados | 0 |
+| Total no banco | 8 |
+
+O resultado confirma a inserção de um novo registro no banco SQLite local.
+
+### Testes automatizados
+
+Todos os 12 testes automatizados foram executados com sucesso.
+
+As capturas de tela da interface e dos resultados devem ser adicionadas à pasta `assets/evidencias/` antes da entrega.
+
+## 13. 🔐 Segurança e LGPD
+
+O conjunto demonstrativo não utiliza nomes, telefones, e-mails ou outros dados pessoais identificáveis.
+
+O processamento é limitado a identificadores técnicos, datas, coordenadas geográficas, gravidade e descrição operacional.
+
+Recomendações:
+
+- Não incluir dados pessoais nos arquivos CSV.
+- Restringir o acesso aos arquivos e ao banco de dados.
+- Definir políticas de retenção para logs e relatórios.
+- Tratar dados de localização com os cuidados necessários.
+
+## 14. ⚠️ Limitações da demonstração
+
+Este projeto demonstra a automação local do processamento de ocorrências viárias.
+
+As funcionalidades implementadas não comprovam:
+
+- Integração direta com a API real do VigiaVia.
+- Comunicação com o banco de produção.
+- Publicação automática em infraestrutura de nuvem.
+- Uso de inteligência artificial para determinar a gravidade das ocorrências.
+
+O componente SQLite é uma simulação local de integração entre sistemas, utilizando arquivos JSON estruturados.
+
+## 15. 🎓 Considerações finais
+
+O VigiaVia RPA demonstra como a automação de processos pode contribuir para a organização e o tratamento de ocorrências viárias.
+
+A solução integra monitoramento de arquivos, validação de dados, análise geográfica, classificação de prioridades, geração de relatórios, persistência local e acompanhamento visual.
+
+O projeto foi desenvolvido como uma demonstração acadêmica da aplicação de RPA em uma proposta CitizenTech, com foco em modularidade, rastreabilidade e confiabilidade do processamento.
+
+---
+
+**FIAP Global Solution 2026.2 — CitizenTech**
+
+Projeto acadêmico demonstrativo.
